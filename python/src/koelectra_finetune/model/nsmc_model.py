@@ -1,13 +1,13 @@
 from transformers import TFElectraModel, ElectraTokenizer
 from tensorflow.keras.layers import Dense, Input
 from tensorflow.keras.models import Model
-
+import tensorflow as tf
 
 class NsmcKoelectraSmallModel:
 
     def __init__(self, max_length=512):
         model_configs = {
-            'max_length': max_length
+            "max_length": max_length
         }
         self.model_configs = model_configs
 
@@ -21,7 +21,11 @@ class NsmcKoelectraSmallModel:
         pt_model = TFElectraModel.from_pretrained(
             "monologg/koelectra-small-v3-discriminator", from_pt=True
         )([input_token, input_pad_mask, input_segment])
-        output = Dense(2, activation='softmax')(pt_model)
+        print(pt_model)
+        pt_model_output = pt_model[:, -1]
+        print(pt_model_output)
+        sentiment_drop = tf.keras.layers.Dropout(0.5)(pt_model_output)
+        output = Dense(2, activation='softmax')(sentiment_drop)
 
         nsmc_model = Model([input_token, input_pad_mask, input_segment], output)
         return nsmc_model
@@ -46,9 +50,10 @@ class NsmcKoelectraSmallTokenizer:
     def tokenize_model_input(cls, text, max_length=512):
         model_input = cls.__tokenizer(
             text,
-            return_tensors='pt',
+            return_tensors='np',
             truncation=True,
             max_length=max_length,
-            pad_to_max_length="max_length"
+            padding="max_length",
+            add_special_tokens=True
         )
         return model_input
