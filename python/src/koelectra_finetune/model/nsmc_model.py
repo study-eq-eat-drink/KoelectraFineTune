@@ -21,11 +21,8 @@ class NsmcKoelectraSmallModel:
         pt_model = TFElectraModel.from_pretrained(
             "monologg/koelectra-small-v3-discriminator", from_pt=True
         )([input_token, input_pad_mask, input_segment])
-        print(pt_model)
-        pt_model_output = pt_model[:, -1]
-        print(pt_model_output)
-        sentiment_drop = tf.keras.layers.Dropout(0.5)(pt_model_output)
-        output = Dense(2, activation='softmax')(sentiment_drop)
+        cls_output = pt_model[0][:,-1,:]
+        output = Dense(2, activation='softmax')(cls_output)
 
         nsmc_model = Model([input_token, input_pad_mask, input_segment], output)
         return nsmc_model

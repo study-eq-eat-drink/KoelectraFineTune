@@ -44,6 +44,7 @@ class NsmcKoelectraSmallModelTrainer:
             loss=loss_func,
             metrics=['accuracy']
         )
+
         input_ids = x_train_datas['input_ids']
         attention_mask = x_train_datas['attention_mask']
         token_type_ids = x_train_datas['token_type_ids']

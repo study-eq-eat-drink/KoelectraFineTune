@@ -5,7 +5,8 @@ from koelectra_finetune.model.nsmc_model import NsmcKoelectraSmallTokenizer, Nsm
 class TestNsmcKoelectraSmallModel(unittest.TestCase):
 
     def test_get_model(self):
-        model = NsmcKoelectraSmallModel()
+
+        model = NsmcKoelectraSmallModel().get_model()
 
         self.assertTrue(model is not None)
 
