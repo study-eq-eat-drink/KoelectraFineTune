@@ -13,25 +13,37 @@ class NsmcKoelectraSmallModelTrainer:
     def train(self):
         config_manager = JSONConfigManager(self.config_path)
 
+        data_config = config_manager["DATA"]
+        train_config = config_manager["TRAIN"]
+
         # 데이터 가져오기
-        train_data_path = config_manager.get("DATA")["train_data_path"]
+        train_data_path = data_config["train_data_path"]
         train_data = NsmcDataLoader.load(train_data_path)
         train_data = train_data[train_data["document"].notna()]
-        train_data = train_data[:100]
-        print(train_data["document"].dtype)
 
-        test_data_path = config_manager.get("DATA")["test_data_path"]
+        test_data_path = data_config["test_data_path"]
         test_data = NsmcDataLoader.load(test_data_path)
+        train_data = train_data[train_data["document"].notna()]
 
+        row_limit = train_config.get("train_row_limit")
+        if row_limit is not None and row_limit > 0:
+            train_data = train_data[:row_limit]
+            test_data = test_data[:row_limit]
 
 
         # 데이터 토크 나이징
-        texts = train_data["document"].tolist()
-        x_train_datas = NsmcKoelectraSmallTokenizer.tokenize_model_input(texts)
+        train_texts = train_data["document"].tolist()
+        x_train_datas = NsmcKoelectraSmallTokenizer.tokenize_model_input(train_texts)
 
+        test_texts = test_data["document"].tolist()
+        x_test_datas = NsmcKoelectraSmallTokenizer.tokenize_model_input(test_texts)
+        
         # 데이터 라벨 변환
-        labels = train_data["label"]
-        y_train_datas = self.__parse_label_to_y_data(labels)
+        train_labels = train_data["label"]
+        y_train_datas = self.__parse_label_to_y_data(train_labels)
+
+        test_labels = train_data["label"]
+        y_test_datas = self.__parse_label_to_y_data(test_labels)
 
         # 모델 로드
         nsmc_model = NsmcKoelectraSmallModel().get_model()
@@ -45,17 +57,32 @@ class NsmcKoelectraSmallModelTrainer:
             metrics=['accuracy']
         )
 
-        input_ids = x_train_datas['input_ids']
-        attention_mask = x_train_datas['attention_mask']
-        token_type_ids = x_train_datas['token_type_ids']
-        print(type(input_ids), type(attention_mask), type(token_type_ids), type(y_train_datas))
-        print(input_ids.shape, attention_mask.shape, token_type_ids.shape, y_train_datas.shape)
-        print(input_ids.dtype, attention_mask.dtype, token_type_ids.dtype, y_train_datas.dtype)
+        train_input_ids = x_train_datas['input_ids']
+        train_attention_mask = x_train_datas['attention_mask']
+        train_token_type_ids = x_train_datas['token_type_ids']
+        print(type(train_input_ids), type(train_attention_mask), type(train_token_type_ids), type(y_train_datas))
+        print(train_input_ids.shape, train_attention_mask.shape, train_token_type_ids.shape, y_train_datas.shape)
+        print(train_input_ids.dtype, train_attention_mask.dtype, train_token_type_ids.dtype, y_train_datas.dtype)
         nsmc_model.summary()
-        nsmc_model.fit([input_ids, attention_mask, token_type_ids], y_train_datas, epochs=1, batch_size=64)
+        
         # 모델 학습
+        nsmc_model.fit([train_input_ids, train_attention_mask, train_token_type_ids], y_train_datas
+                       , epochs=train_config["epochs"], batch_size=train_config["batch_size"])
+        
         # 모델 테스트
+        test_input_ids = x_test_datas['input_ids']
+        test_attention_mask = x_test_datas['attention_mask']
+        test_token_type_ids = x_test_datas['token_type_ids']
+        test_result = nsmc_model.evaluate([test_input_ids, test_attention_mask, test_token_type_ids], y_test_datas
+                                          , batch_size=train_config["batch_size"])
+        
+        print(test_result)
+
         # 모델 저장
+        nsmc_model.save(
+            filepath=train_config["save_model_path"],
+            overwrite=True
+        )
 
     def __parse_label_to_y_data(self, labels):
         y_datas = np.zeros((len(labels), 2), dtype='int32')

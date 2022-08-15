@@ -1,7 +1,7 @@
 from transformers import TFElectraModel, ElectraTokenizer
 from tensorflow.keras.layers import Dense, Input
 from tensorflow.keras.models import Model
-import tensorflow as tf
+
 
 class NsmcKoelectraSmallModel:
 

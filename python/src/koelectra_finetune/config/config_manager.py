@@ -4,7 +4,7 @@ class ConfigManager(ABC):
     def __init__(self, **kwargs):
         pass
 
-    def get(self, key):
+    def __getitem__(self, item):
         pass
 
 
@@ -17,5 +17,5 @@ class JSONConfigManager(ConfigManager):
         for key, value in config_data.items():
             setattr(self, key, value)
 
-    def get(self, key):
-        return getattr(self, key)
+    def __getitem__(self, item):
+        return getattr(self, item)

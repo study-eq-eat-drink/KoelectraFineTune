@@ -7,5 +7,8 @@
     "test_data_path": "../../data/nsmc/ratings_test.txt"
   },
   "TRAIN": {
+    "epochs": 2,
+    "batch_size": 32,
+    "save_model_path": "../../model/nsmc/"
   }
 }
