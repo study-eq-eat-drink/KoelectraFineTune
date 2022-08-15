@@ -5,6 +5,8 @@ from koelectra_finetune.config.config_manager import JSONConfigManager
 import numpy as np
 import tensorflow as tf
 
+from typing import List
+
 class NsmcKoelectraSmallModelTrainer:
 
     def __init__(self, config_path: str):
@@ -20,10 +22,12 @@ class NsmcKoelectraSmallModelTrainer:
         train_data_path = data_config["train_data_path"]
         train_data = NsmcDataLoader.load(train_data_path)
         train_data = train_data[train_data["document"].notna()]
+        train_data = train_data[train_data["document"].map(len) > 10]
 
         test_data_path = data_config["test_data_path"]
         test_data = NsmcDataLoader.load(test_data_path)
-        train_data = train_data[train_data["document"].notna()]
+        test_data = test_data[test_data["document"].notna()]
+        test_data = test_data[test_data["document"].map(len) > 10]
 
         row_limit = train_config.get("train_row_limit")
         if row_limit is not None and row_limit > 0:
@@ -46,6 +50,53 @@ class NsmcKoelectraSmallModelTrainer:
         y_test_datas = self.__parse_label_to_y_data(test_labels)
 
         # 모델 로드
+        is_continue_train_model = train_config.get('is_continue_train_model')
+        if is_continue_train_model:
+            nsmc_model = self.__create_compile_model()
+        else:
+            nsmc_model = self.__get_model(train_config["save_model_path"])
+
+        train_input_ids = x_train_datas['input_ids']
+        train_attention_mask = x_train_datas['attention_mask']
+        train_token_type_ids = x_train_datas['token_type_ids']
+        nsmc_model.summary()
+
+        # callback 정의
+        callback_funcs = self.__get_callback_funcs(
+            save_model_path=train_config["save_model_path"]
+        )
+        
+        # 모델 학습
+        nsmc_model.fit([train_input_ids, train_attention_mask, train_token_type_ids], y_train_datas
+                       , epochs=train_config["epochs"]
+                       , batch_size=train_config["batch_size"]
+                       , callbacks=callback_funcs
+                       )
+        
+        # 모델 테스트
+        test_input_ids = x_test_datas['input_ids']
+        test_attention_mask = x_test_datas['attention_mask']
+        test_token_type_ids = x_test_datas['token_type_ids']
+        test_result = nsmc_model.evaluate([test_input_ids, test_attention_mask, test_token_type_ids], y_test_datas
+                                          , batch_size=train_config["batch_size"]
+                                          )
+
+        print(test_result)
+
+        # 모델 저장
+        # nsmc_model.save(
+        #     filepath=train_config["save_model_path"],
+        #     overwrite=True
+        # )
+
+    @classmethod
+    def __parse_label_to_y_data(cls, labels):
+        y_datas = np.zeros((len(labels), 2), dtype='int32')
+        for index, label in enumerate(labels):
+            y_datas[index][label] = 1
+        return y_datas
+
+    def __create_compile_model(self):
         nsmc_model = NsmcKoelectraSmallModel().get_model()
 
         # 모델 학습 설정
@@ -56,38 +107,27 @@ class NsmcKoelectraSmallModelTrainer:
             loss=loss_func,
             metrics=['accuracy']
         )
+        return nsmc_model
 
-        train_input_ids = x_train_datas['input_ids']
-        train_attention_mask = x_train_datas['attention_mask']
-        train_token_type_ids = x_train_datas['token_type_ids']
-        print(type(train_input_ids), type(train_attention_mask), type(train_token_type_ids), type(y_train_datas))
-        print(train_input_ids.shape, train_attention_mask.shape, train_token_type_ids.shape, y_train_datas.shape)
-        print(train_input_ids.dtype, train_attention_mask.dtype, train_token_type_ids.dtype, y_train_datas.dtype)
-        nsmc_model.summary()
-        
-        # 모델 학습
-        nsmc_model.fit([train_input_ids, train_attention_mask, train_token_type_ids], y_train_datas
-                       , epochs=train_config["epochs"], batch_size=train_config["batch_size"])
-        
-        # 모델 테스트
-        test_input_ids = x_test_datas['input_ids']
-        test_attention_mask = x_test_datas['attention_mask']
-        test_token_type_ids = x_test_datas['token_type_ids']
-        test_result = nsmc_model.evaluate([test_input_ids, test_attention_mask, test_token_type_ids], y_test_datas
-                                          , batch_size=train_config["batch_size"])
-        
-        print(test_result)
+    @classmethod
+    def __get_model(cls, model_path: str):
+        return tf.keras.models.load_model(model_path)
 
-        # 모델 저장
-        nsmc_model.save(
-            filepath=train_config["save_model_path"],
-            overwrite=True
+    @classmethod
+    def __get_callback_funcs(cls, save_model_path: str) -> List:
+        checkpoint_func = tf.keras.callbacks.ModelCheckpoint(
+            filepath=save_model_path,
+            monitor='loss',
+            verbose=1,
+            save_best_only=True,
+            model='auto'
         )
 
-    def __parse_label_to_y_data(self, labels):
-        y_datas = np.zeros((len(labels), 2), dtype='int32')
-        for index, label in enumerate(labels):
-            y_datas[index][label] = 1
-        return y_datas
+        early_stop_func = tf.keras.callbacks.EarlyStopping(
+            monitor='loss',
+            patience='2'
+        )
+
+        return [checkpoint_func, early_stop_func]
 
 

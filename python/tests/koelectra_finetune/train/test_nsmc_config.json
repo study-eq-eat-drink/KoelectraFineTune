@@ -8,8 +8,9 @@
   },
   "TRAIN": {
     "train_row_limit": 100,
-    "epochs": 1,
+    "epochs": 3,
     "batch_size": 32,
-    "save_model_path": "../../../../model/nsmc/"
+    "save_model_path": "../../../../model/nsmc/",
+    "is_continue_train_model": true
   }
 }
