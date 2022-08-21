@@ -20,8 +20,10 @@ class NsmcKoelectraSmallModel:
         input_segment = Input((max_length,), dtype='int32')
         pt_model = TFElectraModel.from_pretrained(
             "monologg/koelectra-small-v3-discriminator", from_pt=True
-        )([input_token, input_pad_mask, input_segment])
-        cls_output = pt_model[0][:,-1,:]
+        )
+        pt_model_output = pt_model.electra([input_token, input_pad_mask, input_segment])
+        print(pt_model_output)
+        cls_output = pt_model_output[0][:,-1,:]
         output = Dense(2, activation='softmax')(cls_output)
 
         nsmc_model = Model([input_token, input_pad_mask, input_segment], output)

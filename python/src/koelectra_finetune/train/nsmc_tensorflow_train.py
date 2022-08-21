@@ -7,7 +7,7 @@ import tensorflow as tf
 
 from typing import List
 
-class NsmcKoelectraSmallModelTrainer:
+class NsmcTensorflowKoelectraSmallModelTrainer:
 
     def __init__(self, config_path: str):
         self.config_path = config_path
@@ -46,7 +46,7 @@ class NsmcKoelectraSmallModelTrainer:
         train_labels = train_data["label"]
         y_train_datas = self.__parse_label_to_y_data(train_labels)
 
-        test_labels = train_data["label"]
+        test_labels = test_data["label"]
         y_test_datas = self.__parse_label_to_y_data(test_labels)
 
         # 모델 로드

@@ -9,6 +9,6 @@
   "TRAIN": {
     "epochs": 2,
     "batch_size": 16,
-    "save_model_path": "../../model/nsmc/"
+    "save_model_path": "../../model/nsmc/tensorflow/"
   }
 }
