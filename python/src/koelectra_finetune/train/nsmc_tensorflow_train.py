@@ -1,4 +1,4 @@
-from koelectra_finetune.model.nsmc_model import NsmcKoelectraSmallModel, NsmcKoelectraSmallTokenizer
+from koelectra_finetune.model.nsmc_tensorflow_model import NsmcKoelectraSmallModel, NsmcKoelectraSmallTokenizer
 from koelectra_finetune.data.nsmc_data_load import NsmcDataLoader
 from koelectra_finetune.config.config_manager import JSONConfigManager
 
@@ -7,7 +7,7 @@ import tensorflow as tf
 
 from typing import List
 
-class NsmcTensorflowKoelectraSmallModelTrainer:
+class NsmcKoelectraSmallModelTensorflowTrainer:
 
     def __init__(self, config_path: str):
         self.config_path = config_path
@@ -48,13 +48,15 @@ class NsmcTensorflowKoelectraSmallModelTrainer:
 
         test_labels = test_data["label"]
         y_test_datas = self.__parse_label_to_y_data(test_labels)
+        
+        model_path = train_config["save_model_path"]
 
         # 모델 로드
         is_continue_train_model = train_config.get('is_continue_train_model')
         if is_continue_train_model:
-            nsmc_model = self.__create_compile_model()
+            nsmc_model = self.__get_model(model_path)
         else:
-            nsmc_model = self.__get_model(train_config["save_model_path"])
+            nsmc_model = self.__create_compile_model()
 
         train_input_ids = x_train_datas['input_ids']
         train_attention_mask = x_train_datas['attention_mask']
@@ -63,7 +65,7 @@ class NsmcTensorflowKoelectraSmallModelTrainer:
 
         # callback 정의
         callback_funcs = self.__get_callback_funcs(
-            save_model_path=train_config["save_model_path"]
+            save_model_path=model_path
         )
         
         # 모델 학습
@@ -81,11 +83,9 @@ class NsmcTensorflowKoelectraSmallModelTrainer:
                                           , batch_size=train_config["batch_size"]
                                           )
 
-        print(test_result)
-
         # 모델 저장
         # nsmc_model.save(
-        #     filepath=train_config["save_model_path"],
+        #     filepath=model_path,
         #     overwrite=True
         # )
 

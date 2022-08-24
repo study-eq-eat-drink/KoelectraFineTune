@@ -10,7 +10,6 @@
     "train_row_limit": 100,
     "epochs": 1,
     "batch_size": 32,
-    "save_model_path": "../../../../model/nsmc/test/tensorflow/",
-    "is_continue_train_model": true
+    "save_model_path": "../../../../model/nsmc/test/tensorflow/"
   }
 }

@@ -1,5 +1,5 @@
 import unittest
-from koelectra_finetune.model.nsmc_model import NsmcKoelectraSmallTokenizer, NsmcKoelectraSmallModel
+from koelectra_finetune.model.nsmc_tensorflow_model import NsmcKoelectraSmallTokenizer, NsmcKoelectraSmallModel
 
 
 class TestNsmcKoelectraSmallModel(unittest.TestCase):

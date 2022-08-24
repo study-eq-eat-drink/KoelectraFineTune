@@ -10,7 +10,7 @@ cuda==10.1
 ## tensorflow, pytorch
 ```text
 # pip
-pip install tensorflow-gpu==2.3.4 transformers==3.3.1 pandas seqeval fastprogress attrdict
+pip install tensorflow==2.3.4 tensorflow-gpu==2.3.4 transformers==3.3.1 pandas seqeval fastprogress attrdict
 
 # conda
 conda install pytorch==1.6.0 torchvision==0.7.0 cudatoolkit=10.1 -c pytorch
@@ -18,5 +18,6 @@ conda install pytorch==1.6.0 torchvision==0.7.0 cudatoolkit=10.1 -c pytorch
 
 ## onnx
 ```text
-pip install keras2onnx==1.7.0
+pip install tf2onnx==1.12.0
+pip install onnxruntime==1.12.1
 ```
